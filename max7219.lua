@@ -34,24 +34,15 @@ local MAX7219_REG_DISPLAYTEST = 0x0F
 
 local function sendByte(module, register, data)
   -- out("module: " .. module .. " register: " .. register .. " data: " .. data)
-  spiRegister = {}
-  spiData = {}
-
-  -- set all to 0 by default
-  for i = 1, numberOfModules do
-    spiRegister[i] = 0
-    spiData[i] = 0
-  end
-
-  -- set the values for just the affected display
-  spiRegister[module] = register
-  spiData[module] = data
 
   -- enble sending data
   gpio.write(slaveSelectPin, gpio.LOW)
 
   for i = 1, numberOfModules do
-    spi.send(1, spiRegister[i] * 256 + spiData[i])
+    if i == module then
+      spi.send(1, register * 256 + data)
+    else
+      spi.send(1, 0)
   end
 
   -- make the chip latch data into the registers
