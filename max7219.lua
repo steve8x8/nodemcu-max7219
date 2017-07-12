@@ -231,11 +231,11 @@ function M.write7segment(text, rAlign)
   local lenNoDots = text:gsub("%.", ""):len()
 
   -- pad with spaces to turn off not required digits
-  if (lenNoDots < (8 * numberOfModules)) then
+  if (lenNoDots < numberOfColumns) then
     if (rAlign) then
-      text = string.rep(" ", (8 * numberOfModules) - lenNoDots) .. text
+      text = string.rep(" ", numberOfColumns - lenNoDots) .. text
     else
-      text = text .. string.rep(" ", (8 * numberOfModules) - lenNoDots)
+      text = text .. string.rep(" ", numberOfColumns - lenNoDots)
     end
   end
 
