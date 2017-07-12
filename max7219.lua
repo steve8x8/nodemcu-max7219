@@ -109,21 +109,11 @@ end
 
 local function commit()
   -- for every module (1 to numberOfModules) send registers 1 - 8
-  -- since Lua uses 1-based indexes it's a bit of a +-1 dance here, sample:
-  --    module: 1 register: 1 data: 64
-  --    module: 1 register: 2 data: 66
-  --    ...
-  --    module: 1 register: 8 data: 0
-  --    module: 2 register: 1 data: 98
-  --    ...
-  --    module: 2 register: 8 data: 0
-  --    module: 3 register: 1 data: 34
-  --    ...
-  --    module: 3 register: 8 data: 0
-  for i = 1, numberOfColumns do
-    local module = math.floor(((i - 1) / 8) + 1)
-    local register = math.floor(((i - 1) % 8) + 1)
-    sendByte(module, register, columns[i])
+  for module = 1, numberOfModules do
+    for register = 1, 8 do
+      local i = (module-1) * 8 + register
+      sendByte(module, register, columns[i])
+    end
   end
 end
 
