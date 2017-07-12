@@ -43,6 +43,7 @@ local function sendByte(module, register, data)
       spi.send(1, register * 256 + data)
     else
       spi.send(1, 0)
+    end
   end
 
   -- make the chip latch data into the registers
