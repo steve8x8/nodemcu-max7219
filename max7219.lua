@@ -9,6 +9,8 @@
 local modname = ...
 local M = {}
 _G[modname] = M
+
+local bit = require("bit")
 --------------------------------------------------------------------------------
 -- Local variables
 --------------------------------------------------------------------------------
@@ -95,6 +97,16 @@ local function rotate(char, rotateleft)
   return newMatrix
 end
 
+local function reverseByte(byte)
+  local bits = 0
+  for index = 0, 7 do
+    if bit.isset(byte, index) then
+      bits = bit.set(bits, 7-index)
+    end
+  end
+  return bits
+end
+
 local function commit()
   -- for every module (1 to numberOfModules) send registers 1 - 8
   -- since Lua uses 1-based indexes it's a bit of a +-1 dance here, sample:
@@ -168,11 +180,6 @@ end
 
 function M.write(chars, transformation)
   local transformation = transformation or {}
-  local revByte
-
-  if transformation.invert == true then
-    revByte = require("reverseBytes")
-  end
 
   local c = {}
   for i = 1, #chars do
@@ -187,17 +194,11 @@ function M.write(chars, transformation)
         -- module offset + inverted register + 1
         -- to produce 8, 7 .. 1, 16, 15 ... 9, 24, 23 ...
         local index = ((i - 1) * 8) + 8 - k + 1
-        c[index] = revByte.GetReverseByte(v)
+        c[index] = reverseByte(v)
       else
         table.insert(c, v)
       end
     end
-  end
-
-  if (revByte ~= nil) then
-    package.loaded[revByte] = nil
-    _G[revByte] = nil
-    revByte = nil
   end
 
   columns = c
