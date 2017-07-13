@@ -23,13 +23,15 @@ local slaveSelectPin
 local columns = {}
 -- frame buffer lock bit
 local fb_lock = true
--- scrolling
-local scroll_shift = 0
-local scroll_mode = 0
-local scroll_delay = 2
-local scroll_count = 0
 -- timer to control display
 local display_timer = nil
+-- scrolling
+local scroll_mode = 0
+local scroll_delay = 0
+-- scrolling index, direction, and countdown
+local scroll_shift = 0
+local scroll_dir = 0
+local scroll_count = 0
 
 local MAX7219_REG_DECODEMODE = 0x09
 local MAX7219_REG_INTENSITY = 0x0A
@@ -108,15 +110,67 @@ local function reverseByte(byte)
   return bits
 end
 
+-- scrolling setup
+local function setScroll(mode, delay)
+  -- start with no offset
+  scroll_shift = 0
+  -- initial scroll direction
+  scroll_mode = mode
+  if     scroll_mode == 1 then -- left
+    scroll_dir = 1
+  elseif scroll_mode == 2 then -- right
+    scroll_dir = -1
+  elseif scroll_mode == 3 then -- bounce, left first
+    scroll_dir = 1
+  else                         -- no scrolling
+    scroll_dir = 0
+  end
+  -- delay and countdown
+  scroll_delay = delay
+  scroll_count = delay
+end
+
 -- timer callback function (every 100 ms)
 local function sendAll()
   while fb_lock do
     -- dummy loop waiting for frame-buffer lock
   end
+  -- scrolling
+  local shift
+  -- for every module (1 to numberOfModules) send registers 1 - 8
+  if #(fbuffer or {}) <= numberOfColumns then
+    -- scroll only "long" stuff
+    shift = 0
+  elseif scroll_mode == 0 or scroll_delay == 0 then
+    shift = 0
+  else
+    scroll_count = scroll_count - 1
+    if scroll_count <= 0 then
+      scroll_count = scroll_delay
+      scroll_shift = scroll_shift + scroll_dir
+      -- beyond frame buffer?
+      -- non-bounce scroll restarts
+      -- bounce scroll reverses direction
+      if     scroll_shift > #fbuffer then
+        if scroll_mode ~= 3 then
+          scroll_shift = - numberOfColumns
+        else
+          scroll_dir = - scroll_dir
+        end
+      elseif scroll_shift < - numberOfColumns then
+        if scroll_mode ~= 3 then
+          scroll_shift = #fbuffer
+        else
+          scroll_dir = - scroll_dir
+        end
+      end
+    end
+    shift = scroll_shift
+  end
   -- for every module (1 to numberOfModules) send registers 1 - 8
   for module = 1, numberOfModules do
     for register = 1, 8 do
-      local i = (module-1) * 8 + register + scroll_shift
+      local i = (module-1) * 8 + register + shift
       local byte = columns[i] or 0
       sendByte(module, register, byte)
     end
