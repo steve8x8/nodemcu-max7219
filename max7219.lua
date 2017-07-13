@@ -45,10 +45,8 @@ local MAX7219_REG_DISPLAYTEST = 0x0F
 
 local function sendByte(module, register, data)
   -- out("module: " .. module .. " register: " .. register .. " data: " .. data)
-
-  -- enble sending data
+  -- enable sending data
   gpio.write(slaveSelectPin, gpio.LOW)
-
   for i = 1, numberOfModules do
     if i == module then
       spi.send(1, register * 256 + data)
@@ -56,7 +54,6 @@ local function sendByte(module, register, data)
       spi.send(1, 0)
     end
   end
-
   -- make the chip latch data into the registers
   gpio.write(slaveSelectPin, gpio.HIGH)
 end
@@ -110,6 +107,21 @@ local function reverseByte(byte)
   return bits
 end
 
+local function resetScroll()
+  -- after filling frame buffer, reset scroll offset and direction
+  if     scroll_mode == 1 then -- left
+    scroll_offset = #columns or 0
+  elseif scroll_mode == 2 then -- right
+    scroll_offset = 0
+  elseif scroll_mode == 3 then -- bounce, left first
+    scroll_offset = #columns or 0
+    scroll_dir = -1
+  else                         -- no scrolling
+    scroll_offset = 0
+  end
+  scroll_count = scroll_delay
+end
+
 -- timer callback function (every 100 ms)
 local function sendAll()
   while fb_lock do
@@ -160,7 +172,10 @@ end
 local function commit(what)
   -- lock frame buffer while copying
   fb_lock = true
+  -- copy data
   columns = what
+  -- reset scrolling
+  resetScroll()
   fb_lock = false
   --sendAll()
 end
