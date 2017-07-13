@@ -99,7 +99,8 @@ local function reverseByte(byte)
   return bits
 end
 
-local function commit()
+local function commit(what)
+  columns = what
   -- for every module (1 to numberOfModules) send registers 1 - 8
   for module = 1, numberOfModules do
     for register = 1, 8 do
@@ -156,12 +157,12 @@ end
 
 function M.clear()
   -- table may have grown beyond physical limit
-  columns = {}
+  local columns = {}
   -- initialize to size of physical device
   for i = 1, numberOfColumns do
     columns[i] = 0
   end
-  commit()
+  commit(columns)
 end
 
 function M.write(chars, transformation)
@@ -187,8 +188,7 @@ function M.write(chars, transformation)
     end
   end
 
-  columns = c
-  commit()
+  commit(c)
 end
 
 -- Sets the brightness of the display.
