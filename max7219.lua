@@ -199,7 +199,9 @@ end
 --               - numberOfModules*
 --               - slaveSelectPin*, ESP8266 pin which is connected to CS of the MAX7219
 --               - debug
---               - intensitiy, 0x00 - 0x0F (0 - 15)
+--               - intensity, 0x00 - 0x0F (0 - 15)
+--               - scrollmode (0 = off, 1 = left, 2 = right, 3 = bounce)
+--               - scrolldelay (one column per n*100 msec)
 function M.setup(config)
   local config = config or {}
 
@@ -225,6 +227,8 @@ function M.setup(config)
     sendByte(i, MAX7219_REG_INTENSITY, config.intensity and config.intensity or 1)
     sendByte(i, MAX7219_REG_SHUTDOWN, 1)
   end
+
+  setScroll(config.scrollmode or 0, config.scrolldelay or 0)
 
   M.clear()
 
