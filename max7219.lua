@@ -138,7 +138,7 @@ local function sendAll()
   -- scrolling
   local shift
   -- for every module (1 to numberOfModules) send registers 1 - 8
-  if #(fbuffer or {}) <= numberOfColumns then
+  if #(columns or {}) <= numberOfColumns then
     -- scroll only "long" stuff
     shift = 0
   elseif scroll_mode == 0 or scroll_delay == 0 then
@@ -151,7 +151,7 @@ local function sendAll()
       -- beyond frame buffer?
       -- non-bounce scroll restarts
       -- bounce scroll reverses direction
-      if     scroll_shift > #fbuffer then
+      if     scroll_shift > #columns then
         if scroll_mode ~= 3 then
           scroll_shift = - numberOfColumns
         else
@@ -159,7 +159,7 @@ local function sendAll()
         end
       elseif scroll_shift < - numberOfColumns then
         if scroll_mode ~= 3 then
-          scroll_shift = #fbuffer
+          scroll_shift = #columns
         else
           scroll_dir = - scroll_dir
         end
