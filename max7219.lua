@@ -21,6 +21,8 @@ local numberOfColumns
 local slaveSelectPin
 -- numberOfModules * 8 bytes for the char representation, rightmost byte first
 local columns = {}
+-- frame buffer lock bit
+local fb_lock = true
 
 local MAX7219_REG_DECODEMODE = 0x09
 local MAX7219_REG_INTENSITY = 0x0A
@@ -99,8 +101,11 @@ local function reverseByte(byte)
   return bits
 end
 
-local function commit(what)
-  columns = what
+-- ToDo: make this a timer controlled function
+local function sendAll()
+  while fb_lock do
+    -- dummy loop waiting for frame-buffer lock
+  end
   -- for every module (1 to numberOfModules) send registers 1 - 8
   for module = 1, numberOfModules do
     for register = 1, 8 do
@@ -109,6 +114,15 @@ local function commit(what)
       sendByte(module, register, byte)
     end
   end
+end
+
+local function commit(what)
+  -- lock frame buffer while copying
+  fb_lock = true
+  columns = what
+  fb_lock = false
+  -- call if not timer controlled
+  sendAll()
 end
 
 local function out(msg)
