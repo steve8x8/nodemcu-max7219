@@ -28,6 +28,8 @@ local scroll_shift = 0
 local scroll_mode = 0
 local scroll_delay = 2
 local scroll_count = 0
+-- timer to control display
+local display_timer = nil
 
 local MAX7219_REG_DECODEMODE = 0x09
 local MAX7219_REG_INTENSITY = 0x0A
@@ -106,7 +108,7 @@ local function reverseByte(byte)
   return bits
 end
 
--- ToDo: make this a timer controlled function
+-- timer callback function (every 100 ms)
 local function sendAll()
   while fb_lock do
     -- dummy loop waiting for frame-buffer lock
@@ -126,8 +128,7 @@ local function commit(what)
   fb_lock = true
   columns = what
   fb_lock = false
-  -- call if not timer controlled
-  sendAll()
+  --sendAll()
 end
 
 local function out(msg)
@@ -172,6 +173,13 @@ function M.setup(config)
   end
 
   M.clear()
+
+  -- set up display timer
+  if display_timer ~= nil then
+    display_timer:unregister()
+  end
+  display_timer = tmr.create()
+  display_timer:alarm(100, tmr.ALARM_AUTO, sendAll)
 end
 
 function M.clear()
