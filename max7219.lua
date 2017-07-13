@@ -19,7 +19,7 @@ local numberOfModules
 local numberOfColumns
 -- ESP8266 pin which is connected to CS of the MAX7219
 local slaveSelectPin
--- numberOfModules * 8 bytes for the char representation, left-to-right
+-- numberOfModules * 8 bytes for the char representation, rightmost byte first
 local columns = {}
 
 local MAX7219_REG_DECODEMODE = 0x09
@@ -104,7 +104,8 @@ local function commit()
   for module = 1, numberOfModules do
     for register = 1, 8 do
       local i = (module-1) * 8 + register
-      sendByte(module, register, columns[i])
+      local byte = columns[i] or 0
+      sendByte(module, register, byte)
     end
   end
 end
@@ -154,6 +155,9 @@ function M.setup(config)
 end
 
 function M.clear()
+  -- table may have grown beyond physical limit
+  columns = {}
+  -- initialize to size of physical device
   for i = 1, numberOfColumns do
     columns[i] = 0
   end
