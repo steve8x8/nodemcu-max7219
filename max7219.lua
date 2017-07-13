@@ -23,6 +23,11 @@ local slaveSelectPin
 local columns = {}
 -- frame buffer lock bit
 local fb_lock = true
+-- scrolling
+local scroll_shift = 0
+local scroll_mode = 0
+local scroll_delay = 2
+local scroll_count = 0
 
 local MAX7219_REG_DECODEMODE = 0x09
 local MAX7219_REG_INTENSITY = 0x0A
@@ -109,7 +114,7 @@ local function sendAll()
   -- for every module (1 to numberOfModules) send registers 1 - 8
   for module = 1, numberOfModules do
     for register = 1, 8 do
-      local i = (module-1) * 8 + register
+      local i = (module-1) * 8 + register + scroll_shift
       local byte = columns[i] or 0
       sendByte(module, register, byte)
     end
