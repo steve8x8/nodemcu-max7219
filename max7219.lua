@@ -58,45 +58,7 @@ local function sendByte(module, register, data)
   gpio.write(slaveSelectPin, gpio.HIGH)
 end
 
-local function numberToTable(number, base, minLen)
-  local t = {}
-  repeat
-    local remainder = number % base
-    table.insert(t, 1, remainder)
-    number = (number - remainder) / base
-  until number == 0
-  if #t < minLen then
-    for i = 1, minLen - #t do table.insert(t, 1, 0) end
-  end
-  return t
-end
-
-local function rotate(char, rotateleft)
-  local matrix = {}
-  local newMatrix = {}
-
-  for _, v in ipairs(char) do table.insert(matrix, numberToTable(v, 2, 8)) end
-
-  if rotateleft then
-    for i = 8, 1, -1 do
-      local s = ""
-      for j = 1, 8 do
-        s = s .. matrix[j][i]
-      end
-      table.insert(newMatrix, tonumber(s, 2))
-    end
-  else
-    for i = 1, 8 do
-      local s = ""
-      for j = 8, 1, -1 do
-        s = s .. matrix[j][i]
-      end
-      table.insert(newMatrix, tonumber(s, 2))
-    end
-  end
-  return newMatrix
-end
-
+-- read bits of a byte backwards
 local function reverseByte(byte)
   local bits = 0
   for index = 0, 7 do
@@ -106,6 +68,47 @@ local function reverseByte(byte)
   end
   return bits
 end
+
+-- rotate 8 bytes (matrix char) by 90, 180, 270 deg
+local function rotate8byte(char, angle)
+  local result = {0, 0, 0, 0, 0, 0, 0, 0}
+  if     angle ==  90 then  -- rotate left
+    for i = 1, 8 do
+      for j = 1, 8 do
+        if bit.isset(char[i], j - 1) then
+          result[j] = bit.set(result[j], 9 - i)
+        end
+      end
+    end
+  elseif angle == 180 then  -- invert
+    for i = 1, 8 do
+      result[i] = reverseByte(char[9 - i])
+    end
+  elseif angle == 270 then  -- rotate right
+    for i = 1, 8 do
+      for j = 1, 8 do
+        if bit.isset(char[i], j - 1) then
+          result[9 - j] = bit.set(result[9 - j], i)
+        end
+      end
+    end
+  else                      -- do nothing
+    result = char
+  end
+  return result
+end
+
+-- rotate a character left or right
+local function rotate(char, rotateleft)
+  local new = {}
+  if rotateleft then
+    new = rotate8bytes(char, 90)
+  else
+    new = rotate8bytes(char, 270)
+  end
+  return new
+end
+
 
 local function resetScroll()
   -- after filling frame buffer, reset scroll offset and direction
