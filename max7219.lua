@@ -49,7 +49,8 @@ local function sendByte(module, register, data)
   gpio.write(slaveSelectPin, gpio.LOW)
   for i = 1, numberOfModules do
     if i == module then
-      spi.send(1, register * 256 + data)
+      -- clip data to 8 bit
+      spi.send(1, register * 256 + data % 256)
     else
       spi.send(1, 0)
     end
@@ -131,7 +132,7 @@ local function sendAll()
     -- dummy loop waiting for frame-buffer lock
   end
   -- scrolling
-  local offset
+  local offset = 0
   -- for every module (1 to numberOfModules) send registers 1 - 8
   if scroll_mode == 0 then
     offset = 0
@@ -176,7 +177,7 @@ local function commit(what)
   -- lock frame buffer while copying
   fb_lock = true
   -- copy data
-  columns = what
+  columns = what or {}
   -- reset scrolling
   resetScroll()
   fb_lock = false
@@ -221,13 +222,14 @@ function M.setup(config)
     sendByte(i, MAX7219_REG_SCANLIMIT, 7)
     sendByte(i, MAX7219_REG_DECODEMODE, 0x00)
     sendByte(i, MAX7219_REG_DISPLAYTEST, 0)
-    -- use 1 as default intensity if not configured
-    sendByte(i, MAX7219_REG_INTENSITY, config.intensity and config.intensity or 1)
+    -- use  as default intensity if not configured
+    sendByte(i, MAX7219_REG_INTENSITY, config.intensity and config.intensity or 0)
+    -- light up all LEDs if intensity is configured
+    for j = 1, 8 do sendByte(i, j, config.intensity and 0xff or 0) end
     sendByte(i, MAX7219_REG_SHUTDOWN, 1)
   end
 
   M.setScroll(config.scrollmode or 0, config.scrolldelay or 0)
-
   M.clear()
 
   -- set up display timer
@@ -298,7 +300,7 @@ end
 -- intensity: 0x00 - 0x0F (0 - 15)
 function M.setIntensity(intensity)
   for i = 1, numberOfModules do
-    sendByte(i, MAX7219_REG_INTENSITY, intensity)
+    sendByte(i, MAX7219_REG_INTENSITY, (intensity or 0) % 16)
   end
 end
 
