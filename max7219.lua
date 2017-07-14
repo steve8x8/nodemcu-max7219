@@ -222,8 +222,8 @@ function M.setup(config)
     sendByte(i, MAX7219_REG_SCANLIMIT, 7)
     sendByte(i, MAX7219_REG_DECODEMODE, 0x00)
     sendByte(i, MAX7219_REG_DISPLAYTEST, 0)
-    -- use  as default intensity if not configured
-    sendByte(i, MAX7219_REG_INTENSITY, config.intensity and config.intensity or 0)
+    -- use 1 as default intensity if not configured
+    sendByte(i, MAX7219_REG_INTENSITY, config.intensity and config.intensity or 1)
     -- light up all LEDs if intensity is configured
     for j = 1, 8 do sendByte(i, j, config.intensity and 0xff or 0) end
     sendByte(i, MAX7219_REG_SHUTDOWN, 1)
